@@ -39,6 +39,8 @@ import org.apache.maven.InternalErrorException;
 import org.apache.maven.Maven;
 import org.apache.maven.cli.event.DefaultEventSpyContext;
 import org.apache.maven.cli.event.ExecutionEventLogger;
+import org.apache.maven.cli.event.ExecutionListenerChain;
+import org.apache.maven.cli.event.ProfilingExecutionListener;
 import org.apache.maven.cli.logging.Slf4jConfiguration;
 import org.apache.maven.cli.logging.Slf4jConfigurationFactory;
 import org.apache.maven.cli.logging.Slf4jLoggerManager;
@@ -909,8 +911,15 @@ public class MavenCli
             transferListener = getBatchTransferListener();
         }
 
-        ExecutionListener executionListener = new ExecutionEventLogger();
-        executionListener = eventSpyDispatcher.chainListener( executionListener );
+        ExecutionListenerChain chain = new ExecutionListenerChain();
+        chain.addListener( new ExecutionEventLogger() );
+
+        if ( cliRequest.commandLine.hasOption( CLIManager.ANALYZE ) )
+        {
+            chain.addListener( new ProfilingExecutionListener() );
+        }
+
+        ExecutionListener executionListener = eventSpyDispatcher.chainListener( chain );
 
         String alternatePomFile = null;
         if ( commandLine.hasOption( CLIManager.ALTERNATE_POM_FILE ) )
